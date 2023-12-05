@@ -13,9 +13,9 @@ struct ContentView: View {
     @State private var sleepAmount = 8.0
     @State private var coffeeAmount = 1
     
-    @State private var alertTitle = ""
-    @State private var alertMessage = ""
-    @State private var showingAlert = false
+//    @State private var alertTitle = ""
+//    @State private var alertMessage = ""
+//    @State private var showingAlert = false
     
     static var defaultWakeTime: Date {
         var components = DateComponents()
@@ -24,45 +24,7 @@ struct ContentView: View {
         return Calendar.current.date(from: components) ?? .now
     }
     
-    var body: some View {
-        NavigationStack {
-            Form {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("When do you want to wake up?")
-                        .font(.headline)
-                    
-                    DatePicker("Please enter a time", selection: $wakeUp, displayedComponents: .hourAndMinute)
-                        .labelsHidden()
-                }
-                
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Desired amount of sleep")
-                        .font(.headline)
-                    
-                    Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
-                }
-                
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Daily coffee intake")
-                        .font(.headline)
-                    
-                    Stepper("^[\(coffeeAmount) cup](inflect: true)", value: $coffeeAmount, in: 1...20)
-                }
-            
-            }
-            .navigationTitle("BetterRest")
-            .toolbar {
-                Button("Calculate", action: calculateBedtime)
-            }
-            .alert(alertTitle, isPresented: $showingAlert) {
-                Button("Ok") { }
-            } message: {
-                Text(alertMessage)
-            }
-        }
-    }
-    
-    func calculateBedtime() {
+    var sleepResults: String {
         do {
             let config  = MLModelConfiguration()
             let model = try SleepCalculator(configuration: config)
@@ -75,14 +37,56 @@ struct ContentView: View {
             
             let sleepTime = wakeUp - prediction.actualSleep
             
-            alertTitle = "Your ideal bedtime is..."
-            alertMessage = sleepTime.formatted(date: .omitted, time: .shortened)
+            return "Your ideal bedtime is " + sleepTime.formatted(date: .omitted, time: .shortened)
         } catch {
-            alertTitle = "Error"
-            alertMessage = "Sorry, there was a problem calculating your bedtime."
+            return "Sorry, there was a problem calculating your bedtime."
         }
-        
-        showingAlert = true
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    DatePicker("Please enter a time", selection: $wakeUp, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                } header: {
+                    Text("When do you want to wake up?")
+                        .font(.headline)
+                }
+                
+                Section {
+                    Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
+                } header: {
+                    Text("Desired amount of sleep")
+                        .font(.headline)
+                }
+                
+                Section() {
+//                    Stepper("^[\(coffeeAmount) cup](inflect: true)", value: $coffeeAmount, in: 1...20)
+                    
+                    Picker("Number of cups", selection: $coffeeAmount) {
+                        ForEach(1..<21) {
+                            Text(String($0))
+                        }
+                    }
+                } header: {
+                    Text("Daily coffee intake")
+                }
+                
+                Text(sleepResults)
+                    .font(.title3)
+            
+            }
+            .navigationTitle("BetterRest")
+//            .toolbar {
+//                Button("Calculate", action: calculateBedtime)
+//            }
+//            .alert(alertTitle, isPresented: $showingAlert) {
+//                Button("Ok") { }
+//            } message: {
+//                Text(alertMessage)
+//            }
+        }
     }
 }
 
